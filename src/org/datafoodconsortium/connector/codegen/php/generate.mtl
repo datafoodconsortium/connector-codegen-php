@@ -1,0 +1,9 @@
+[comment encoding = UTF-8 /]
+[module generate('http://www.eclipse.org/uml2/5.0.0/UML')/]
+
+[import org::datafoodconsortium::connector::codegen::php::umlpackage /]
+
+[template public generate(aPackage: PackageImport)]
+[comment @main /]
+[generatePackageImport(aPackage)/]
+[/template]
