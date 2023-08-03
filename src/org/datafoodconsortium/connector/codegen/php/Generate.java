@@ -116,7 +116,7 @@ public class Generate extends AbstractAcceleoGenerator {
      * 
      * @param args
      *            Arguments of the generation.
-     * @generated
+     * @generated NOT
      */
     public static void main(String[] args) {
         try {

@@ -14,7 +14,8 @@
     ],
     "require": {
         "php": ">=8.1",
-        "virtual-assembly/semantizer": "^1.0.0-alpha1"
+        "virtual-assembly/semantizer": "^1.0.0-alpha1",
+        "ml/json-ld": "^1.2"
     },
     "autoload": {
         "psr-4": {

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "9ff5cb856306eeb2c62732ee17e62d34",
+    "content-hash": "99bd88ee515f40347ce5f43022fbf702",
     "packages": [
         {
             "name": "ml/iri",

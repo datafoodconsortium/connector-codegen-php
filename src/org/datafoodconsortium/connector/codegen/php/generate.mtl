@@ -1,9 +1,16 @@
 [comment encoding = UTF-8 /]
 [module generate('http://www.eclipse.org/uml2/5.0.0/UML')/]
 
-[import org::datafoodconsortium::connector::codegen::php::umlpackage /]
+[import org::datafoodconsortium::connector::codegen::php::queries /]
+[import org::datafoodconsortium::connector::codegen::php::class /]
+[import org::datafoodconsortium::connector::codegen::php::test /]
+[import org::datafoodconsortium::connector::codegen::php::interface /]
 
-[template public generate(aPackage: PackageImport)]
+[template public generate(model: Model)]
 [comment @main /]
-[generatePackageImport(aPackage)/]
+[for (aClass: Class | model.getClasses())][generateClass(model, aClass)/][/for]
+
+[for (aClass: Class | model.getConcreateClasses())][generateClassTest(model, aClass)/][/for]
+
+[for (anInterface: Interface | model.getInterfaces())][generateInterface(anInterface)/][/for]
 [/template]

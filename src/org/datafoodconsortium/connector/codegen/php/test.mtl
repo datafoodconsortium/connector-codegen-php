@@ -1,0 +1,66 @@
+[comment encoding = UTF-8 /]
+[module test('http://www.eclipse.org/uml2/5.0.0/UML')]
+
+[import org::datafoodconsortium::connector::codegen::php::operation /]
+[import org::datafoodconsortium::connector::codegen::php::queries /]
+
+[template public generateClassTest(model: Model, aClass : Class)]
+[file ('../test/'.concat(aClass.name.concat('Test.php')), false, 'UTF-8')]
+<?php declare(strict_types=1);
+
+namespace DataFoodConsortium\Connector;
+use PHPUnit\Framework\TestCase;
+
+require_once("./vendor/autoload.php");
+
+final class [aClass.name.toUpperFirst()/]Test extends TestCase {
+
+	public function testConstructor(): void {
+        $connector = new Connector();
+
+        $obj = new [aClass.name.toUpperFirst()/](
+            connector: $connector, 
+            semanticId: "http://example.org/obj"
+        );
+
+        $this->assertSame("http://example.org/obj", $obj->getSemanticId());
+    }
+
+	public function testGetSet(): void {
+        $connector = new Connector();
+
+        $obj = new [aClass.name.toUpperFirst()/](
+            connector: $connector, 
+            semanticId: "http://example.org/obj"
+        );
+
+		[for (property: Property | aClass.getAllAttributes())]
+		[generateSetterTest(model, property)/]
+		[generateAdderTest(model, property)/]
+		[/for]
+    }
+}
+[/file]
+[/template]
+
+[template public generateSetterTest(model: Model, property: Property)]
+[let setter: Operation = property.getSetter()] 
+[if (setter <> null)][let parameter: Parameter = setter.ownedParameter.oclAsSet()->at(1)][let propertyType: Type = parameter.type][let setValue: String = generateTestParameter(property)]
+[if (not isPrimitive(propertyType))][setValue/] = new [getImplementations(model, propertyType.oclAsType(Interface))->asSequence()->at(1).name/](connector: $connector, semanticId: "http://semanticId");[/if]
+$obj->[setter.name/]([setValue/]);
+$this->assertSame([if (property.upper = -1)]['['/][/if][setValue/][if (property.upper = -1)][']'/][/if], $obj->[property.getGetter()/]());
+[/let][/let][/let][/if][/let]
+[/template]
+
+[template public generateAdderTest(model: Model, property: Property)]
+[let adder: Operation = property.getAdder()] 
+[if (adder <> null)][let parameter: Parameter = adder.ownedParameter.oclAsSet()->at(1)][let propertyType: Type = parameter.type][let setValue: String = generateTestParameter(property)]
+[if (not isPrimitive(propertyType))][setValue/] = new [getImplementations(model, propertyType.oclAsType(Interface))->asSequence()->at(1).name/](connector: $connector, semanticId: "http://semanticId");[/if]
+$obj->[adder.name/]([setValue/]);
+$this->assertSame([if (property.upper = -1)]['['/][/if][setValue/][if (property.upper = -1)][']'/][/if], $obj->[property.getGetter()/]());
+[/let][/let][/let][/if][/let]
+[/template]
+
+[template public generateTestParameter(p: Property)]
+[if (p.type.name = 'String')]"string"[elseif (p.type.name = 'Real')]1.5[elseif (p.type.name = 'Integer')]3[elseif (p.type.name = 'Boolean')]true[else]$reference[/if]
+[/template]
