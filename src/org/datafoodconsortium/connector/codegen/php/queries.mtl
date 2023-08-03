@@ -17,7 +17,43 @@
 
 [query public getImplementations(model: Model, i: Interface): Bag(Class) = model.getConcreateClasses()->select(c: Class | c.getAllImplementedInterfaces()->includes(i)) /]
 
-[query public hasGeneralization(classifier: Classifier): Boolean = not classifier.generalization->isEmpty() /]
+[query public hasGeneralization(classifier: Classifier): Boolean = not (classifier.generalization->isEmpty()) /]
+
+[query public getMappingStereotype(element: Element): Stereotype = element.getAppliedStereotype('datafoodconsortium_connector::semantic') /]
+
+[query public getMapping(element: Element): String = element.getValue(element.getMappingStereotype(), 'map').toString() /]
+
+[query public getParameters(operation: Operation): OrderedSet(Parameter) = operation.ownedParameter /]
+
+[query public getInputParameters(operation: Operation): OrderedSet(Parameter) = operation.getParameters()->select(p: Parameter | p.direction = ParameterDirectionKind::_in) /]
+
+[query public hasInputParameter(operation: Operation): Boolean = not operation.getInputParameters()->isEmpty() /]
+
+[query public getInputParameter(operation: Operation, index: Integer): Parameter = operation.getInputParameters()->at(index) /]
+
+[query public getFirstInputParameter(operation: Operation): Parameter = operation.getInputParameter(1) /]
+
+[query public getAdderInputParameter(operation: Operation): Parameter = operation.getFirstInputParameter() /]
+
+[query public getSetterInputParameter(operation: Operation): Parameter = operation.getFirstInputParameter() /]
+
+[query public getRemoverInputParameter(operation: Operation): Parameter = operation.getFirstInputParameter() /]
+
+[query public getReturnParameters(operation: Operation): OrderedSet(Parameter) = operation.getParameters()->select(p: Parameter | p.direction = ParameterDirectionKind::return) /]
+
+[query public hasReturnParameter(operation: Operation): Boolean = not operation.getReturnParameters()->isEmpty() /]
+
+[query public getReturnParameter(operation: Operation, index: Integer): Parameter = operation.getReturnParameters()->at(index) /]
+
+[query public getFirstReturnParameter(operation: Operation): Parameter = operation.getReturnParameter(1) /]
+
+[query public getUninitializedParentParameters(operation: Operation): OrderedSet(Parameter) = operation.getInputParameters()->select(p: Parameter | not p.isInitializerParent()) /]
+
+[query public hasUninitializedParentParameters(operation: Operation): Boolean = not operation.getUninitializedParentParameters()->isEmpty() /]
+
+[query public getInitializedParentParameters(operation: Operation): OrderedSet(Parameter) = operation.getInputParameters()->select(p: Parameter | p.isInitializerParent()) /]
+
+[query public hasInitializedParentParameters(operation: Operation): Boolean = not operation.getInitializedParentParameters()->isEmpty() /]
 
 [query public createGeneralization(aClass: Class): Boolean
 	= invoke('org.datafoodconsortium.connector.codegen.common.Common', 'createGeneralization(org.eclipse.uml2.uml.Class)', Sequence{aClass})

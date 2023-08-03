@@ -20,14 +20,14 @@
 [/if]
 [/template]
 
-[template public genConstructorSignatureWithSemanticId(aClass: Class, operation: Operation)][if (aClass.isAbstract)]protected[else]public[/if] function __construct(IConnector $connector[if (aClass.isSemantic())], semanticId[if (aClass.isBlankNode())]?[/if]: string[if (aClass.isBlankNode() or aClass.isAbstract)], semanticType?: string[/if][/if][if not (operation.ownedParameter->select(p: Parameter | (p.direction = ParameterDirectionKind::_in))->isEmpty())], [/if][genConstructorParameters(aClass, operation)/][if (not (aClass.isBlankNode()))], bool doNotStore = false[/if]);[/template]
+[template public genConstructorSignatureWithSemanticId(aClass: Class, operation: Operation)][if (aClass.isAbstract)]protected[else]public[/if] function __construct(IConnector $connector[if (aClass.isSemantic())], semanticId[if (aClass.isBlankNode())]?[/if]: string[if (aClass.isBlankNode() or aClass.isAbstract)], semanticType?: string[/if][/if][if (operation.hasInputParameter())], [/if][genConstructorParameters(aClass, operation)/][if (not (aClass.isBlankNode()))], bool doNotStore = false[/if]);[/template]
 [template public genConstructorSignatureCopy(aClass: Class, operation: Operation)][if (aClass.isAbstract)]protected[else]public[/if] function __construct(IConnector $connector[if (aClass.isSemantic())], semanticId: string, other: Semanticable[/if][if (not (aClass.isBlankNode()))], bool doNotStore = false[/if]);[/template]
-[template public genConstructorSignatureImplementation(aClass: Class, operation: Operation)][if (aClass.isAbstract)]protected[else]public[/if] function __construct(IConnector $connector[if (aClass.isSemantic() or aClass.isAbstract)], string $semanticId = null, [if (aClass.isAbstract or aClass.isBlankNode())]string $semanticType = null, [/if]Semanticable $other = null[/if][if (aClass.isSemantic() or aClass.isAbstract) and not (operation.ownedParameter->select(p: Parameter | (p.direction = ParameterDirectionKind::_in))->isEmpty())], [/if][genConstructorParameters(aClass, operation)/][if (not (aClass.isBlankNode()))], bool $doNotStore = false[/if]) {
+[template public genConstructorSignatureImplementation(aClass: Class, operation: Operation)][if (aClass.isAbstract)]protected[else]public[/if] function __construct(IConnector $connector[if (aClass.isSemantic() or aClass.isAbstract)], string $semanticId = null, [if (aClass.isAbstract or aClass.isBlankNode())]string $semanticType = null, [/if]Semanticable $other = null[/if][if ((aClass.isSemantic() or aClass.isAbstract) and operation.hasInputParameter())], [/if][genConstructorParameters(aClass, operation)/][if (not (aClass.isBlankNode()))], bool $doNotStore = false[/if]) {
 	[generateConstructorBody(aClass, operation)/]
 }[/template]
 
 [template public generateConstructorBody(class: Class, operation: Operation)]
-[if (class.isAbstract)]if ($other) { parent::__construct([if (not class.hasGeneralization())]semantizer: $connector->getSemantizer(), [/if]semanticId: $semanticId, other: $other, doNotStore: $doNotStore); }['\n'/][else]$type = [if (class.isAbstract or class.isBlankNode())]$semanticType? $semanticType: [/if]"[class.getValue(class.getAppliedStereotype('datafoodconsortium_connector::semantic'), 'map').toString().replace('dfc-b', 'dfc')/]";
+[if (class.isAbstract)]if ($other) { parent::__construct([if (not class.hasGeneralization())]semantizer: $connector->getSemantizer(), [/if]semanticId: $semanticId, other: $other, doNotStore: $doNotStore); }['\n'/][else]$type = [if (class.isAbstract or class.isBlankNode())]$semanticType? $semanticType: [/if]"[class.getMapping().replace('dfc-b', 'dfc')/]";
 
 if ($other) {
 	parent::__construct([if (not class.hasGeneralization())]semantizer: $connector->getSemantizer(), [else]connector: $connector, [/if]semanticId: $semanticId, other: $other, doNotStore: $doNotStore);
@@ -38,16 +38,16 @@ if ($other) {
 
 [if (not class.hasGeneralization())]$this->connector = $connector;[/if]
 
-[for (p: Parameter | operation.ownedParameter->select(p: Parameter | not p.isInitializerParent())) separator('\n')]if ($[p.name/][if (p.type.name = 'Integer' or p.type.name = 'Real')] || $[p.name/] === 0[/if]) { [if (p.upper = 1)]$this->[getSetter(p).name /]($[p.name /]);[else]foreach ($[p.name /] as $e) { $this->[getAdder(p).name /]($e); }[/if] }[/for]
+[for (p: Parameter | operation.getUninitializedParentParameters()) separator('\n')]if ($[p.name/][if (p.type.name = 'Integer' or p.type.name = 'Real')] || $[p.name/] === 0[/if]) { [if (p.upper = 1)]$this->[getSetter(p).name /]($[p.name /]);[else]foreach ($[p.name /] as $e) { $this->[getAdder(p).name /]($e); }[/if] }[/for]
 [/template]
 
 [comment handle initializer / initializer parent /]
 [template public generateConstructorSuper(constructor: Operation, aClass: Class)]
-[if (not constructor.ownedParameter->select(p: Parameter | (p.direction = ParameterDirectionKind::_in and p.isInitializerParent()))->isEmpty())], [/if][for (parameter: Parameter | constructor.ownedParameter->select(p: Parameter | (p.direction = ParameterDirectionKind::_in and p.isInitializerParent()))) separator(', ')][parameter.name/]: $[parameter.name/][/for]
+[if (constructor.hasInitializedParentParameters())], [/if][for (parameter: Parameter | constructor.getInitializedParentParameters()) separator(', ')][parameter.name/]: $[parameter.name/][/for]
 [/template]
 
 [template public genConstructorParameters(aClass: Class, operation: Operation)]
-[for (parameter: Parameter | operation.ownedParameter->select(p: Parameter | (p.direction = ParameterDirectionKind::_in))) separator(', ')][generateType(parameter.type.name, parameter.upper) /] $[parameter.name/] = null[/for]
+[for (parameter: Parameter | operation.getInputParameters()) separator(', ')][generateType(parameter.type.name, parameter.upper) /] $[parameter.name/] = null[/for]
 [/template]
 
 [template public getInitializationValueForType(type: String, upper: Integer)]
@@ -56,23 +56,23 @@ if ($other) {
 
 [template public generateAdderBody(aClass: Class, operation: Operation)]
 [comment throws getObject is null/]
-[let parameter: Parameter = operation.ownedParameter->select(p: Parameter | (p.direction = ParameterDirectionKind::_in))->at(1)]
+[let parameter: Parameter = operation.getAdderInputParameter()]
 [let property: Property = getPropertyOfAdder(aClass, operation)]
-[let map: String = property.getValue(property.getAppliedStereotype('datafoodconsortium_connector::semantic'), 'map').toString().replace('dfc-b', 'dfc')]
+[let map: String = property.getMapping().replace('dfc-b', 'dfc')]
 [if (parameter.type.isPrimitive())]this.addSemanticPropertyLiteral("[map/]", [parameter.name/]);[else]$this->addSemanticPropertyReference("[map/]", $[parameter.name/]);[/if][/let][/let][/let]
 [/template]
 
 [template public generateGetterBody(aClass: Class, operation: Operation)]
 [let property: Property = getPropertyOfGetter(aClass, operation)]
-[let map: String = property.getValue(property.getAppliedStereotype('datafoodconsortium_connector::semantic'), 'map').toString().replace('dfc-b', 'dfc')]
+[let map: String = property.getMapping().replace('dfc-b', 'dfc')]
 [if (property.isPropertyMultiple())]return $this->getSemanticPropertyAll("[map/]");[else]return $this->getSemanticProperty("[map/]");[/if]
 [/let][/let]
 [/template]
 
 [template public generateSetterBody(aClass: Class, operation: Operation)]
 [comment throws getObject is null/]
-[let parameter: Parameter = operation.ownedParameter->select(p: Parameter | (p.direction = ParameterDirectionKind::_in))->at(1)][let property: Property = getPropertyOfSetter(aClass, operation)][let property: String = property.getValue(property.getAppliedStereotype('datafoodconsortium_connector::semantic'), 'map').toString().replace('dfc-b', 'dfc')]
-[if (parameter.type.isPrimitive())]$this->setSemanticProperty("[property/]", $[parameter.name/]);[else]$this->setSemanticProperty[if (parameter.type.isBlankNode())]Anonymous[else]Reference[/if]($property, $[parameter.name/]);[if (not parameter.type.isBlankNode())]['\n'/]$this->connector->store($[parameter.name/]);[/if][/if][/let][/let][/let]
+[let parameter: Parameter = operation.getSetterInputParameter()][let property: Property = getPropertyOfSetter(aClass, operation)][let map: String = property.getMapping().replace('dfc-b', 'dfc')]
+[if (parameter.type.isPrimitive())]$this->setSemanticProperty("[map/]", $[parameter.name/]);[else]$this->setSemanticProperty[if (parameter.type.isBlankNode())]Anonymous[else]Reference[/if]($property, $[parameter.name/]);[if (not parameter.type.isBlankNode())]['\n'/]$this->connector->store($[parameter.name/]);[/if][/if][/let][/let][/let]
 [/template]
 
 [template public generateRemoverBody(aClass: Class, operation: Operation)]
@@ -82,17 +82,14 @@ throw new Error("Not yet implemented.");
 [template public generateOperationSignature(aClass: Class, operation: Operation)][let isAsyncGetter: Boolean = (operation.isGetter() and (getPropertyOfGetter(aClass, operation).isPropertyMultiple() or not operation.ownedParameter->select(p: Parameter | (p.direction = ParameterDirectionKind::return))->at(1).type.isPrimitive()))][if (operation.isConstructor())]__construct[else][if (operation.isAbstract)]abstract [/if][operation.name/][/if]([genOperationParameters(operation)/])[if not (operation.isConstructor())]: [generateOperationReturn(operation)/][/if][/let][/template]
 
 [template public generateOperationReturn(operation: Operation)]
-[if (operation.ownedParameter->select(p: Parameter | (p.direction = ParameterDirectionKind::return))->isEmpty())]
-void[else]
-[let parameter: Parameter = operation.ownedParameter->select(p: Parameter | (p.direction = ParameterDirectionKind::return))->at(1)]
-[if (operation.isGetter() and not parameter.type.isPrimitive())][if (parameter.upper = -1)]Array[else][parameter.type.name/][/if][else][operation.ownedParameter->select(p: Parameter | (p.direction = ParameterDirectionKind::return)).genOperationParameter()/][/if]
+[if (operation.hasReturnParameter())]
+[let parameter: Parameter = operation.getFirstReturnParameter()]
+[if (operation.isGetter() and not parameter.type.isPrimitive())][if (parameter.upper = -1)]Array[else][parameter.type.name/][/if][else][parameter.genOperationParameter()/][/if]
 [/let]
-[/if]
+[else]void[/if]
 [/template]
 
-[template public genOperationParameters(anOperation: Operation)]
-[anOperation.ownedParameter->select(param : Parameter | (param.direction = ParameterDirectionKind::_in)).genOperationParameter()->sep(', ')/]
-[/template]
+[template public genOperationParameters(operation: Operation)][operation.getInputParameters().genOperationParameter()->sep(', ')/][/template]
 
 [template public genOperationParameter(parameter: Parameter)][generateType(parameter)/] [if (parameter.direction = ParameterDirectionKind::_in)]$[parameter.name/][/if][/template]
 
