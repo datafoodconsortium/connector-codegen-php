@@ -15,38 +15,44 @@ require_once("./vendor/autoload.php");
 
 final class [aClass.name.toUpperFirst()/]Test extends TestCase {
 
+	[if (aClass.hasConstructor() and aClass.getDefaultConstructor().hasInputParameter())]
+	[let testValues: Sequence(String) = getTestValues(aClass.getDefaultConstructorParameters()->asSequence())] 
 	public function testConstructor(): void {
         $connector = new Connector();
 
         $obj = new [aClass.name.toUpperFirst()/](
-            connector: $connector, 
-            semanticId: "http://example.org/obj"
-        );
+            connector: $connector,
+			[if (not aClass.isBlankNode())]semanticId: "http://example.org/obj",[/if]
+        	[for (p: Parameter | aClass.getDefaultConstructorParameters()) separator(', \n\t\t\t')][p.name/]: [testValues->at(i)/][/for]
+		);
 
-        $this->assertSame("http://example.org/obj", $obj->getSemanticId());
-    }
+        [if (not aClass.isBlankNode())]$this->assertSame("http://example.org/obj", $obj->getSemanticId());[/if]
+		[for (p: Parameter | aClass.getDefaultConstructorParameters()) separator('\n\t\t')]$this->assertSame([testValues->at(i)/], $[p.name/]);[/for]
+    }[/let][/if]
 
+
+	[if (aClass.hasOwnedOperations())]
 	public function testGetSet(): void {
         $connector = new Connector();
 
         $obj = new [aClass.name.toUpperFirst()/](
-            connector: $connector, 
-            semanticId: "http://example.org/obj"
+            connector: $connector[if (not aClass.isBlankNode())], ['\n\t\t\t'/]semanticId: "http://example.org/obj"[/if]
         );
 
 		[for (property: Property | aClass.getAllAttributes())]
 		[generateSetterTest(model, property)/]
 		[generateAdderTest(model, property)/]
 		[/for]
-    }
+    }[/if]
+
 }
 [/file]
 [/template]
 
 [template public generateSetterTest(model: Model, property: Property)]
 [let setter: Operation = property.getSetter()] 
-[if (setter <> null)][let parameter: Parameter = setter.ownedParameter.oclAsSet()->at(1)][let propertyType: Type = parameter.type][let setValue: String = generateTestParameter(property)]
-[if (not isPrimitive(propertyType))][setValue/] = new [getImplementations(model, propertyType.oclAsType(Interface))->asSequence()->at(1).name/](connector: $connector, semanticId: "http://semanticId");[/if]
+[if (setter <> null)][let parameter: Parameter = setter.ownedParameter.oclAsSet()->at(1)][let propertyType: Type = parameter.type][let setValue: String = generateTestValue(property)]
+[if (not isPrimitive(propertyType))][setValue/] = new [getImplementations(model, propertyType.oclAsType(Interface))->asSequence()->at(1).name/](connector: $connector[if (not parameter.isBlankNode())], semanticId: "http://semanticId"[/if]);[/if]
 $obj->[setter.name/]([setValue/]);
 $this->assertSame([if (property.upper = -1)]['['/][/if][setValue/][if (property.upper = -1)][']'/][/if], $obj->[property.getGetter()/]());
 [/let][/let][/let][/if][/let]
@@ -54,13 +60,15 @@ $this->assertSame([if (property.upper = -1)]['['/][/if][setValue/][if (property.
 
 [template public generateAdderTest(model: Model, property: Property)]
 [let adder: Operation = property.getAdder()] 
-[if (adder <> null)][let parameter: Parameter = adder.ownedParameter.oclAsSet()->at(1)][let propertyType: Type = parameter.type][let setValue: String = generateTestParameter(property)]
-[if (not isPrimitive(propertyType))][setValue/] = new [getImplementations(model, propertyType.oclAsType(Interface))->asSequence()->at(1).name/](connector: $connector, semanticId: "http://semanticId");[/if]
+[if (adder <> null)][let parameter: Parameter = adder.ownedParameter.oclAsSet()->at(1)][let propertyType: Type = parameter.type][let setValue: String = generateTestValue(property)]
+[if (not isPrimitive(propertyType))][setValue/] = new [getImplementations(model, propertyType.oclAsType(Interface))->asSequence()->at(1).name/](connector: $connector[if (not parameter.isBlankNode())], semanticId: "http://semanticId"[/if]);[/if]
 $obj->[adder.name/]([setValue/]);
 $this->assertSame([if (property.upper = -1)]['['/][/if][setValue/][if (property.upper = -1)][']'/][/if], $obj->[property.getGetter()/]());
 [/let][/let][/let][/if][/let]
 [/template]
 
-[template public generateTestParameter(p: Property)]
-[if (p.type.name = 'String')]"string"[elseif (p.type.name = 'Real')]1.5[elseif (p.type.name = 'Integer')]3[elseif (p.type.name = 'Boolean')]true[else]$reference[/if]
+[template public generateTestValue(p: Property)][p.type.generateTestValue()/][/template]
+
+[template public generateTestValue(t: Type)]
+[if (t.name = 'String')]"string"[elseif (t.name = 'Real')]1.5[elseif (t.name = 'Integer')]3[elseif (t.name = 'Boolean')]true[else]$reference[/if]
 [/template]

@@ -13,7 +13,7 @@
 
 namespace DataFoodConsortium\Connector;
 
-use \VirtualAssembly\Semantizer\SemanticObject;
+use \VirtualAssembly\Semantizer\SemanticObject[if (aClass.isBlankNode())]Anonymous[/if];
 use \VirtualAssembly\Semantizer\Semanticable;
 
 [if (aClass.isAbstract)]abstract [/if]class [aClass.name.toUpperFirst()/] [generateGeneralization(aClass)/][generateInterfaceRealizationHeader(aClass)/]{

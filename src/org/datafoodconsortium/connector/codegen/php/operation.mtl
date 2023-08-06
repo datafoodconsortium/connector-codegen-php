@@ -3,10 +3,10 @@
 
 [import org::datafoodconsortium::connector::codegen::php::queries /]
 
+[template public generateOperationSignature(aClass: Class, operation: Operation)][let isAsyncGetter: Boolean = (operation.isGetter() and (getPropertyOfGetter(aClass, operation).isPropertyMultiple() or not operation.getFirstReturnParameter().type.isPrimitive()))][if (operation.isConstructor())]__construct[else][if (operation.isAbstract)]abstract function [/if][operation.name/][/if]([genOperationParameters(operation)/])[if not (operation.isConstructor())]: [generateOperationReturn(operation)/][/if][/let][if (operation.isAbstract)];[/if][/template]
+
 [template public generateOperationImplementation(aClass: Class, operation: Operation)]
-[if (operation.isConstructor())][if (not aClass.isSemantic() and not aClass.isAbstract)][genConstructorSignatureWithSemanticId(aClass, operation)/]
-[genConstructorSignatureCopy(aClass, operation)/][/if]
-[genConstructorSignatureImplementation(aClass, operation)/][else]public function [generateOperationSignature(aClass, operation) /] {
+[if (operation.isConstructor())][genConstructorSignatureImplementation(aClass, operation)/][else]public function [generateOperationSignature(aClass, operation) /] {
 [if (isGetter(operation))]
 	[generateGetterBody(aClass, operation)/]
 [elseif (isSetter(operation))]
@@ -22,21 +22,21 @@
 
 [template public genConstructorSignatureWithSemanticId(aClass: Class, operation: Operation)][if (aClass.isAbstract)]protected[else]public[/if] function __construct(IConnector $connector[if (aClass.isSemantic())], semanticId[if (aClass.isBlankNode())]?[/if]: string[if (aClass.isBlankNode() or aClass.isAbstract)], semanticType?: string[/if][/if][if (operation.hasInputParameter())], [/if][genConstructorParameters(aClass, operation)/][if (not (aClass.isBlankNode()))], bool doNotStore = false[/if]);[/template]
 [template public genConstructorSignatureCopy(aClass: Class, operation: Operation)][if (aClass.isAbstract)]protected[else]public[/if] function __construct(IConnector $connector[if (aClass.isSemantic())], semanticId: string, other: Semanticable[/if][if (not (aClass.isBlankNode()))], bool doNotStore = false[/if]);[/template]
-[template public genConstructorSignatureImplementation(aClass: Class, operation: Operation)][if (aClass.isAbstract)]protected[else]public[/if] function __construct(IConnector $connector[if (aClass.isSemantic() or aClass.isAbstract)], string $semanticId = null, [if (aClass.isAbstract or aClass.isBlankNode())]string $semanticType = null, [/if]Semanticable $other = null[/if][if ((aClass.isSemantic() or aClass.isAbstract) and operation.hasInputParameter())], [/if][genConstructorParameters(aClass, operation)/][if (not (aClass.isBlankNode()))], bool $doNotStore = false[/if]) {
+[template public genConstructorSignatureImplementation(aClass: Class, operation: Operation)][if (aClass.isAbstract)]protected[else]public[/if] function __construct(IConnector $connector[if ((aClass.isSemantic() or aClass.isAbstract) and not aClass.isBlankNode())], string $semanticId = null[/if], string $semanticType = null, Semanticable $other = null[if ((aClass.isSemantic() or aClass.isAbstract) and operation.hasInputParameter())], [/if][genConstructorParameters(aClass, operation)/][if (not (aClass.isBlankNode()))], bool $doNotStore = false[/if]) {
 	[generateConstructorBody(aClass, operation)/]
 }[/template]
 
-[template public generateConstructorBody(class: Class, operation: Operation)]
-[if (class.isAbstract)]if ($other) { parent::__construct([if (not class.hasGeneralization())]semantizer: $connector->getSemantizer(), [/if]semanticId: $semanticId, other: $other, doNotStore: $doNotStore); }['\n'/][else]$type = [if (class.isAbstract or class.isBlankNode())]$semanticType? $semanticType: [/if]"[class.getMapping().replace('dfc-b', 'dfc')/]";
+[template public generateConstructorBody(aClass: Class, operation: Operation)]
+[if (aClass.isAbstract)]if ($other) { parent::__construct([if (not aClass.hasGeneralization())]semantizer: $connector->getSemantizer(), [/if][if (not (aClass.isBlankNode()))]semanticId: $semanticId, [/if]other: $other[if (not (aClass.isBlankNode()))], doNotStore: $doNotStore[/if]); }['\n'/][else]$type = [if (aClass.isAbstract or aClass.isBlankNode())]$semanticType? $semanticType: [/if]"[aClass.getMapping().replace('dfc-b', 'dfc')/]";
 
 if ($other) {
-	parent::__construct([if (not class.hasGeneralization())]semantizer: $connector->getSemantizer(), [else]connector: $connector, [/if]semanticId: $semanticId, other: $other, doNotStore: $doNotStore);
+	parent::__construct([if (not aClass.hasGeneralization())]semantizer: $connector->getSemantizer(), [else]connector: $connector, [/if][if (not (aClass.isBlankNode()))]semanticId: $semanticId, [/if]other: $other[if (not (aClass.isBlankNode()))], doNotStore: $doNotStore[/if]);
 	if (!$other->isSemanticTypeOf($type))
 		throw new Error("Can't create the semantic object of type " . $type . " from a copy: the copy is of type " . $other->getSemanticType() . ".");
 }
-[/if]else { parent::__construct([if (not class.hasGeneralization())]semantizer: $connector->getSemantizer(), [else]connector: $connector, [/if]semanticId: $semanticId, semanticType: [if (class.isAbstract)]$semanticType[else]$type[/if][generateConstructorSuper(operation, class)/], doNotStore: $doNotStore); }
+[/if]else { parent::__construct([if (not aClass.hasGeneralization())]semantizer: $connector->getSemantizer(), [else]connector: $connector, [/if][if (not (aClass.isBlankNode()))]semanticId: $semanticId, [/if]semanticType: [if (aClass.isAbstract)]$semanticType[else]$type[/if][generateConstructorSuper(operation, aClass)/][if (not (aClass.isBlankNode()))], doNotStore: $doNotStore[/if]); }
 
-[if (not class.hasGeneralization())]$this->connector = $connector;[/if]
+[if (not aClass.hasGeneralization())]$this->connector = $connector;[/if]
 
 [for (p: Parameter | operation.getUninitializedParentParameters()) separator('\n')]if ($[p.name/][if (p.type.name = 'Integer' or p.type.name = 'Real')] || $[p.name/] === 0[/if]) { [if (p.upper = 1)]$this->[getSetter(p).name /]($[p.name /]);[else]foreach ($[p.name /] as $e) { $this->[getAdder(p).name /]($e); }[/if] }[/for]
 [/template]
@@ -72,14 +72,12 @@ if ($other) {
 [template public generateSetterBody(aClass: Class, operation: Operation)]
 [comment throws getObject is null/]
 [let parameter: Parameter = operation.getSetterInputParameter()][let property: Property = getPropertyOfSetter(aClass, operation)][let map: String = property.getMapping().replace('dfc-b', 'dfc')]
-[if (parameter.type.isPrimitive())]$this->setSemanticProperty("[map/]", $[parameter.name/]);[else]$this->setSemanticProperty[if (parameter.type.isBlankNode())]Anonymous[else]Reference[/if]($property, $[parameter.name/]);[if (not parameter.type.isBlankNode())]['\n'/]$this->connector->store($[parameter.name/]);[/if][/if][/let][/let][/let]
+$this->setSemanticProperty("[map/]", $[parameter.name/]);[/let][/let][/let]
 [/template]
 
 [template public generateRemoverBody(aClass: Class, operation: Operation)]
 throw new Error("Not yet implemented.");
 [/template]
-
-[template public generateOperationSignature(aClass: Class, operation: Operation)][let isAsyncGetter: Boolean = (operation.isGetter() and (getPropertyOfGetter(aClass, operation).isPropertyMultiple() or not operation.ownedParameter->select(p: Parameter | (p.direction = ParameterDirectionKind::return))->at(1).type.isPrimitive()))][if (operation.isConstructor())]__construct[else][if (operation.isAbstract)]abstract [/if][operation.name/][/if]([genOperationParameters(operation)/])[if not (operation.isConstructor())]: [generateOperationReturn(operation)/][/if][/let][/template]
 
 [template public generateOperationReturn(operation: Operation)]
 [if (operation.hasReturnParameter())]
