@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.datafoodconsortium.connector.codegen.common.Logger;
 import org.eclipse.acceleo.engine.event.IAcceleoTextGenerationListener;
 import org.eclipse.acceleo.engine.generation.strategy.IAcceleoGenerationStrategy;
 import org.eclipse.acceleo.engine.service.AbstractAcceleoGenerator;
@@ -206,11 +207,12 @@ public class Generate extends AbstractAcceleoGenerator {
      * If this generator needs to listen to text generation events, listeners can be returned from here.
      * 
      * @return List of listeners that are to be notified when text is generated through this launch.
-     * @generated
+     * @generated NOT
      */
     @Override
     public List<IAcceleoTextGenerationListener> getGenerationListeners() {
         List<IAcceleoTextGenerationListener> listeners = super.getGenerationListeners();
+        listeners.add(new Logger());
         /*
          * TODO if you need to listen to generation event, add listeners to the list here. If you want to change
          * the content of this method, do NOT forget to change the "@generated" tag in the Javadoc of this method

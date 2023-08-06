@@ -15,6 +15,10 @@
 [query public getStereotypeNameSetter(traceabilityContext : OclAny): String = getProperty('stereotypeSetter') /]
 
 [query public getStereotypePropertyNameInitializerProperty(traceabilityContext : OclAny): String = getProperty('stereotypeInitializer_property') /]
+[query public getStereotypePropertyNamePropertyGetter(traceabilityContext : OclAny): String = getProperty('stereotypeProperty_getter') /]
+[query public getStereotypePropertyNamePropertySetter(traceabilityContext : OclAny): String = getProperty('stereotypeProperty_setter') /]
+[query public getStereotypePropertyNamePropertyMultipleAdder(traceabilityContext : OclAny): String = getProperty('stereotypePropertyMultiple_adder') /]
+[query public getStereotypePropertyNamePropertyMultipleRemover(traceabilityContext : OclAny): String = getProperty('stereotypePropertyMultiple_remover') /]
 [query public getStereotypePropertyNameSemanticMap(traceabilityContext : OclAny): String = getProperty('stereotypeSemantic_map') /]
 
 [query public getStereotypeAdder(e: Element): Stereotype = e.getStereotype(getStereotypeNameAdder()) /]
@@ -30,8 +34,14 @@
 [query public getStereotypeSemantic(e: Element): Stereotype = e.getStereotype(getStereotypeNameSemantic()) /]
 [query public getStereotypeSetter(e: Element): Stereotype = e.getStereotype(getStereotypeNameSetter()) /]
 
-[query public getStereotypePropertyInitializerProperty(e: Element): Property = e.getValue(e.getStereotypeInitializer(), getStereotypePropertyNameInitializerProperty()) /]
-[query public getStereotypePropertySemanticMap(e: Element): String = e.getValue(e.getStereotypeSemantic(), getStereotypePropertyNameSemanticMap()) /]
+[query public getStereotypeValueInitializerProperty(e: Element): Property = e.getValue(e.getStereotypeInitializer(), getStereotypePropertyNameInitializerProperty()) /]
+[query public getStereotypeValuePropertyGetter(e: Element): Operation = e.getValue(e.getStereotypeProperty(), getStereotypePropertyNamePropertyGetter()) /]
+[query public getStereotypeValuePropertySetter(e: Element): Operation = e.getValue(e.getStereotypeProperty(), getStereotypePropertyNamePropertySetter()) /]
+[query public getStereotypeValuePropertyMultipleAdder(e: Element): Operation = e.getValue(e.getStereotypePropertyMultiple(), getStereotypePropertyNamePropertyMultipleAdder()) /]
+[query public getStereotypeValuePropertyMultipleGetter(e: Element): Operation = e.getValue(e.getStereotypePropertyMultiple(), getStereotypePropertyNamePropertyGetter()) /]
+[query public getStereotypeValuePropertyMultipleRemover(e: Element): Operation = e.getValue(e.getStereotypePropertyMultiple(), getStereotypePropertyNamePropertyMultipleRemover()) /]
+[query public getStereotypeValuePropertyMultipleSetter(e: Element): Operation = e.getValue(e.getStereotypePropertyMultiple(), getStereotypePropertyNamePropertySetter()) /]
+[query public getStereotypeValueSemanticMap(e: Element): String = e.getValue(e.getStereotypeSemantic(), getStereotypePropertyNameSemanticMap()) /]
 
 [query public getPackageImports(model: Model): Set(PackageImport) = model.packageImport /]
 
@@ -55,6 +65,8 @@
 
 [query public getOperations(owner: Class): OrderedSet(Operation) = owner.ownedOperation /]
 
+[query public getProperties(aClass: Class): OrderedSet(Property) = aClass.allAttributes() /]
+
 [query public getConstructors(aClass: Class): OrderedSet(Operation) = aClass.getOperations()->select(o: Operation | o.isConstructor()) /]
 
 [query public hasConstructor(aClass: Class): Boolean = not aClass.getConstructors()->isEmpty() /]
@@ -65,41 +77,33 @@
 
 [query public getDefaultConstructorParametersInitializer(aClass: Class): OrderedSet(Parameter) = aClass.getDefaultConstructorParameters()->select(p: Parameter | p.isInitializer()) /]
 
-[query public getInitializerProperty(p: Parameter): Property = p.getStereotypePropertyInitializerProperty() /]
+[query public getInitializerProperty(p: Parameter): Property = p.getStereotypeValueInitializerProperty() /]
 
 [query public getInitializerPropertyGetter(p: Parameter): Operation = p.getInitializerProperty().getGetter() /]
 
-[query public getGetter(property: Property): Operation = null /]
+[query public hasStereotype(element: Element, qualifiedName: String): Boolean = not element.getAppliedStereotypes()->select(s: Stereotype | s.qualifiedName = qualifiedName)->isEmpty() /] 
 
-[query public hasStereotype(element: Element, name: String): Boolean = not element.getAppliedStereotypes()->select(s: Stereotype | s.name = name)->isEmpty() /] 
+[query public getStereotype(element: Element, qualifiedName: String): Stereotype = element.getAppliedStereotype(qualifiedName) /]
 
-[query public getStereotype(element: Element, stereotype: String): Stereotype = element.getAppliedStereotype(stereotype) /]
+[query public getMapping(element: Element): String = element.getStereotypeValueSemanticMap().toString() /]
 
-[query public getMapping(element: Element): String = element.getStereotypePropertySemanticMap().toString() /]
-
-[query public getParameters(operation: Operation): OrderedSet(Parameter) = operation.ownedParameter /]
+[query public getParameters(anOperation: Operation): OrderedSet(Parameter) = anOperation.ownedParameter /]
 
 [query public getInputParameters(operation: Operation): OrderedSet(Parameter) = operation.getParameters()->select(p: Parameter | p.direction = ParameterDirectionKind::_in) /]
 
 [query public hasInputParameter(operation: Operation): Boolean = not operation.getInputParameters()->isEmpty() /]
 
-[query public getInputParameter(operation: Operation, index: Integer): Parameter = operation.getInputParameters()->at(index) /]
+[query public getInputParameterAt(operation: Operation, index: Integer): Parameter = operation.getInputParameters()->at(index) /]
 
-[query public getFirstInputParameter(operation: Operation): Parameter = operation.getInputParameter(1) /]
-
-[query public getAdderInputParameter(operation: Operation): Parameter = operation.getFirstInputParameter() /]
-
-[query public getSetterInputParameter(operation: Operation): Parameter = operation.getFirstInputParameter() /]
-
-[query public getRemoverInputParameter(operation: Operation): Parameter = operation.getFirstInputParameter() /]
+[query public getInputParameter(operation: Operation): Parameter = operation.getInputParameterAt(1) /]
 
 [query public getReturnParameters(operation: Operation): OrderedSet(Parameter) = operation.getParameters()->select(p: Parameter | p.direction = ParameterDirectionKind::return) /]
 
 [query public hasReturnParameter(operation: Operation): Boolean = not operation.getReturnParameters()->isEmpty() /]
 
-[query public getReturnParameter(operation: Operation, index: Integer): Parameter = operation.getReturnParameters()->at(index) /]
+[query public getReturnParameterAt(operation: Operation, index: Integer): Parameter = operation.getReturnParameters()->at(index) /]
 
-[query public getFirstReturnParameter(operation: Operation): Parameter = operation.getReturnParameter(1) /]
+[query public getReturnParameter(operation: Operation): Parameter = operation.getReturnParameterAt(1) /]
 
 [query public getUninitializedParentParameters(operation: Operation): OrderedSet(Parameter) = operation.getInputParameters()->select(p: Parameter | not p.isInitializerParent()) /]
 
@@ -109,18 +113,21 @@
 
 [query public hasInitializedParentParameters(operation: Operation): Boolean = not operation.getInitializedParentParameters()->isEmpty() /]
 
-[query public isBlankNode(parameter: Parameter): Boolean = if (parameter.type.oclIsTypeOf(Class)) then parameter.type.oclAsType(Class).isBlankNode() else parameter.type.oclAsType(Interface).isBlankNode() endif /]
+[query public initResources(traceabilityContext : OclAny): Boolean
+	= invoke('org.datafoodconsortium.connector.codegen.common.Common', 'init()', Sequence{})
+/]
 
 [query public getTestValues(ps: Sequence(Parameter)): Sequence(String)
 	= invoke('org.datafoodconsortium.connector.codegen.common.Common', 'getTestValues(java.util.ArrayList)', Sequence{ps})
 /]
 
-[query public createGeneralization(aClass: Class): Boolean
+[comment query public createGeneralization(aClass: Class): Boolean
 	= invoke('org.datafoodconsortium.connector.codegen.common.Common', 'createGeneralization(org.eclipse.uml2.uml.Class)', Sequence{aClass})
 /]
 
 [query public isAdder(o: Operation): Boolean = o.hasStereotype(getStereotypeNameAdder()) /]
 [query public isBlankNode(e: Element): Boolean = e.hasStereotype(getStereotypeNameBlankNode()) /]
+[query public isBlankNode(parameter: Parameter): Boolean = if (parameter.type.oclIsTypeOf(Class)) then parameter.type.oclAsType(Class).isBlankNode() else parameter.type.oclAsType(Interface).isBlankNode() endif /]
 [query public isConstructor(o: Operation): Boolean = o.hasStereotype(getStereotypeNameConstructor()) /]
 [query public isExternal(e: Element): Boolean = e.hasStereotype(getStereotypeNameExternal())/]
 [query public isGetter(o: Operation): Boolean = o.hasStereotype(getStereotypeNameGetter()) /]
@@ -132,74 +139,35 @@
 [query public isSemantic(e: Element): Boolean = e.hasStereotype(getStereotypeNameSemantic()) /]
 [query public isSetter(o: Operation): Boolean = o.hasStereotype(getStereotypeNameSetter()) /]
 
-[query public isPrimitive(t: Type): Boolean 
-	= invoke('org.datafoodconsortium.connector.codegen.common.Common', 'isPrimitive(org.eclipse.uml2.uml.Type)', Sequence{t})
-/]
+[query public isPrimitive(t: Type): Boolean = if (t.name = 'String' or t.name = 'Boolean' or t.name = 'Real' or t.name = 'Integer') then true else false endif /]
 
-[comment query public hasStereotype(e: Element, s: String): Boolean 
-	= invoke('org.datafoodconsortium.connector.codegen.common.Common', 'hasStereotype(org.eclipse.uml2.uml.Element, java.lang.String)', Sequence{e, s})
-/]
-
-[query public getAttributeForStereotypedOperation(c: Class, s: String, o: String): String 
+[comment query public getAttributeForStereotypedOperation(c: Class, s: String, o: String): String 
 	= invoke('org.datafoodconsortium.connector.codegen.common.Common', 'getAttributeForStereotypedOperation(org.eclipse.uml2.uml.Class, java.lang.String, java.lang.String)', Sequence{c, s, o})
 /]
 
-[query public getConstructorUninitializedAttributes(o: Operation): Sequence(Property)
+[comment query public getConstructorUninitializedAttributes(o: Operation): Sequence(Property)
 	= invoke('org.datafoodconsortium.connector.codegen.common.Common', 'getConstructorUninitializedAttributes(org.eclipse.uml2.uml.Operation)', Sequence{o})
 /]
 
-[query public getConstructor(c: Class, o: Operation): String 
+[comment query public getConstructor(c: Class, o: Operation): String 
 	= invoke('org.datafoodconsortium.connector.codegen.common.Common', 'getConstructor(org.eclipse.uml2.uml.Class, org.eclipse.uml2.uml.Operation)', Sequence{c, o})
 /]
 
-[query public getGetter(c: Class, o: Operation): String 
-	= invoke('org.datafoodconsortium.connector.codegen.common.Common', 'getGetter(org.eclipse.uml2.uml.Class, org.eclipse.uml2.uml.Operation)', Sequence{c, o})
-/]
+[query public getProperty(anOperation: Operation, aClass: Class): Property = if (anOperation.isAdder()) then anOperation.getPropertyofAdder(aClass) else if (anOperation.isGetter()) then anOperation.getPropertyOfGetter(aClass) else if (anOperation.isRemover()) then anOperation.getPropertyOfRemover(aClass) else if (anOperation.isSetter()) then anOperation.getPropertyOfSetter(aClass) else null endif endif endif endif /]
+[query private getPropertyofAdder(anOperation: Operation, aClass: Class): Property = aClass.getProperties()->select(p: Property | p.isPropertyMultiple() and p.getAdder() = anOperation)->at(1) /]
+[query private getPropertyOfGetter(anOperation: Operation, aClass: Class): Property = aClass.getProperties()->select(p: Property | p.getGetter() = anOperation)->at(1) /]
+[query private getPropertyOfRemover(anOperation: Operation, aClass: Class): Property = aClass.getProperties()->select(p: Property | p.getRemover() = anOperation)->at(1) /]
+[query private getPropertyOfSetter(anOperation: Operation, aClass: Class): Property = aClass.getProperties()->select(p: Property | p.getSetter() = anOperation)->at(1) /]
 
-[query public getPropertyOfAdder(c: Class, o: Operation): Property 
-	= invoke('org.datafoodconsortium.connector.codegen.common.Common', 'getPropertyOfAdder(org.eclipse.uml2.uml.Class, org.eclipse.uml2.uml.Operation)', Sequence{c, o})
-/]
+[query public getAdder(p: Property): Operation = p.getStereotypeValuePropertyMultipleAdder() /]
+[query public getAdder(p: Parameter): Operation = p.getStereotypeValueInitializerProperty().getAdder() /]
+[query public getGetter(p: Property): Operation = if (p.isPropertyMultiple()) then p.getStereotypeValuePropertyMultipleGetter() else p.getStereotypeValuePropertyGetter() endif /]
+[query public getGetter(p: Parameter): Operation = p.getStereotypeValueInitializerProperty().getGetter() /]
+[query public getRemover(p: Property): Operation = p.getStereotypeValuePropertyMultipleAdder() /]
+[query public getRemover(p: Parameter): Operation = p.getStereotypeValueInitializerProperty().getRemover() /]
+[query public getSetter(p: Property): Operation = if (p.isPropertyMultiple()) then p.getStereotypeValuePropertyMultipleSetter() else p.getStereotypeValuePropertySetter() endif /]
+[query public getSetter(p: Parameter): Operation = p.getStereotypeValueInitializerProperty().getSetter() /]
 
-[query public getPropertyOfGetter(c: Class, o: Operation): Property 
-	= invoke('org.datafoodconsortium.connector.codegen.common.Common', 'getPropertyOfGetter(org.eclipse.uml2.uml.Class, org.eclipse.uml2.uml.Operation)', Sequence{c, o})
-/]
-
-[query public getPropertyOfSetter(c: Class, o: Operation): Property 
-	= invoke('org.datafoodconsortium.connector.codegen.common.Common', 'getPropertyOfSetter(org.eclipse.uml2.uml.Class, org.eclipse.uml2.uml.Operation)', Sequence{c, o})
-/]
-
-[query public getSetter(p: Property): Operation 
-	= invoke('org.datafoodconsortium.connector.codegen.common.Common', 'getSetter(org.eclipse.uml2.uml.Property)', Sequence{p})
-/]
-
-[query public getSetter(c: Class, o: Operation): String 
-	= invoke('org.datafoodconsortium.connector.codegen.common.Common', 'getSetter(org.eclipse.uml2.uml.Class, org.eclipse.uml2.uml.Operation)', Sequence{c, o})
-/]
-
-[query public getSetter(p: Parameter): Operation 
-	= invoke('org.datafoodconsortium.connector.codegen.common.Common', 'getSetter(org.eclipse.uml2.uml.Parameter)', Sequence{p})
-/]
-
-[query public getAdder(p: Property): Operation 
-	= invoke('org.datafoodconsortium.connector.codegen.common.Common', 'getAdder(org.eclipse.uml2.uml.Property)', Sequence{p})
-/]
-
-[query public getAdder(c: Class, o: Operation): String 
-	= invoke('org.datafoodconsortium.connector.codegen.common.Common', 'getAdder(org.eclipse.uml2.uml.Class, org.eclipse.uml2.uml.Operation)', Sequence{c, o})
-/]
-
-[query public getAdder(p: Parameter): Operation 
-	= invoke('org.datafoodconsortium.connector.codegen.common.Common', 'getAdder(org.eclipse.uml2.uml.Parameter)', Sequence{p})
-/]
-
-[query public getRemover(c: Class, o: Operation): String 
-	= invoke('org.datafoodconsortium.connector.codegen.common.Common', 'getRemover(org.eclipse.uml2.uml.Class, org.eclipse.uml2.uml.Operation)', Sequence{c, o})
-/]
-
-[comment query public getGetter(p: Property): String 
-	= invoke('org.datafoodconsortium.connector.codegen.common.Common', 'getGetter(org.eclipse.uml2.uml.Property)', Sequence{p})
-/]
-
-[query public getUnimplementedOperations(c: Classifier): Sequence(Operation)
+[comment query public getUnimplementedOperations(c: Classifier): Sequence(Operation)
 	= invoke('org.datafoodconsortium.connector.codegen.common.Common', 'getUnimplementedOperations(org.eclipse.uml2.uml.Classifier)', Sequence{c})
 /]

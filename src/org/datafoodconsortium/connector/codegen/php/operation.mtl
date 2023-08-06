@@ -3,7 +3,7 @@
 
 [import org::datafoodconsortium::connector::codegen::php::queries /]
 
-[template public generateOperationSignature(aClass: Class, operation: Operation)][let isAsyncGetter: Boolean = (operation.isGetter() and (getPropertyOfGetter(aClass, operation).isPropertyMultiple() or not operation.getFirstReturnParameter().type.isPrimitive()))][if (operation.isConstructor())]__construct[else][if (operation.isAbstract)]abstract function [/if][operation.name/][/if]([genOperationParameters(operation)/])[if not (operation.isConstructor())]: [generateOperationReturn(operation)/][/if][/let][if (operation.isAbstract)];[/if][/template]
+[template public generateOperationSignature(aClass: Class, operation: Operation)][if (operation.isConstructor())]__construct[else][if (operation.isAbstract)]abstract function [/if][operation.name/][/if]([genOperationParameters(operation)/])[if not (operation.isConstructor())]: [generateOperationReturn(operation)/][/if][if (operation.isAbstract)];[/if][/template]
 
 [template public generateOperationImplementation(aClass: Class, operation: Operation)]
 [if (operation.isConstructor())][genConstructorSignatureImplementation(aClass, operation)/][else]public function [generateOperationSignature(aClass, operation) /] {
@@ -56,14 +56,14 @@ if ($other) {
 
 [template public generateAdderBody(aClass: Class, operation: Operation)]
 [comment throws getObject is null/]
-[let parameter: Parameter = operation.getAdderInputParameter()]
-[let property: Property = getPropertyOfAdder(aClass, operation)]
+[let parameter: Parameter = operation.getInputParameter()]
+[let property: Property = operation.getProperty(aClass)]
 [let map: String = property.getMapping().replace('dfc-b', 'dfc')]
 [if (parameter.type.isPrimitive())]this.addSemanticPropertyLiteral("[map/]", [parameter.name/]);[else]$this->addSemanticPropertyReference("[map/]", $[parameter.name/]);[/if][/let][/let][/let]
 [/template]
 
 [template public generateGetterBody(aClass: Class, operation: Operation)]
-[let property: Property = getPropertyOfGetter(aClass, operation)]
+[let property: Property = operation.getProperty(aClass)]
 [let map: String = property.getMapping().replace('dfc-b', 'dfc')]
 [if (property.isPropertyMultiple())]return $this->getSemanticPropertyAll("[map/]");[else]return $this->getSemanticProperty("[map/]");[/if]
 [/let][/let]
@@ -71,7 +71,7 @@ if ($other) {
 
 [template public generateSetterBody(aClass: Class, operation: Operation)]
 [comment throws getObject is null/]
-[let parameter: Parameter = operation.getSetterInputParameter()][let property: Property = getPropertyOfSetter(aClass, operation)][let map: String = property.getMapping().replace('dfc-b', 'dfc')]
+[let parameter: Parameter = operation.getInputParameter()][let property: Property = operation.getProperty(aClass)][let map: String = property.getMapping().replace('dfc-b', 'dfc')]
 $this->setSemanticProperty("[map/]", $[parameter.name/]);[/let][/let][/let]
 [/template]
 
@@ -81,7 +81,7 @@ throw new Error("Not yet implemented.");
 
 [template public generateOperationReturn(operation: Operation)]
 [if (operation.hasReturnParameter())]
-[let parameter: Parameter = operation.getFirstReturnParameter()]
+[let parameter: Parameter = operation.getReturnParameter()]
 [if (operation.isGetter() and not parameter.type.isPrimitive())][if (parameter.upper = -1)]Array[else][parameter.type.name/][/if][else][parameter.genOperationParameter()/][/if]
 [/let]
 [else]void[/if]
@@ -93,7 +93,7 @@ throw new Error("Not yet implemented.");
 
 [template public generateType(p: Parameter)][if (p.upper = -1)]Array[else][p.type.generateTypeName()/][/if][/template]
 
-[template public generateType(name: String, upper: Integer)][if (name = 'String')]string[elseif (name = 'Real')]float[elseif (name = 'Integer' )]int[elseif (name = 'Boolean')]bool[else][if (upper = -1)]Array[else][name/][/if][/if][/template]
+[template public generateType(name: String, upper: Integer)][if (name = 'String')]string[elseif (name = 'Real')]float[elseif (name = 'Integer' )]int[elseif (name = 'Boolean')]bool[elseif (upper = -1)]Array[else][name/][/if][/template]
 
 [template public generateTypeName(t: Type)][if (t.name = 'String')]string[elseif (name = 'Real')]float[elseif (name = 'Integer')]int[elseif (name = 'Boolean')]bool[else][t.name/][/if][/template]
 

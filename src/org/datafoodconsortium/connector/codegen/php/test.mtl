@@ -40,8 +40,8 @@ final class [aClass.name.toUpperFirst()/]Test extends TestCase {
         );
 
 		[for (property: Property | aClass.getAllAttributes())]
-		[generateSetterTest(model, property)/]
-		[generateAdderTest(model, property)/]
+		[if (not property.isPropertyMultiple())][generateSetterTest(model, property)/][/if]
+		[if (property.isPropertyMultiple())][generateAdderTest(model, property)/][/if]
 		[/for]
     }[/if]
 

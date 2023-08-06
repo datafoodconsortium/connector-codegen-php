@@ -8,9 +8,10 @@
 
 [template public generate(model: Model)]
 [comment @main /]
+[initResources()/]
 [for (aClass: Class | model.getClasses())][generateClass(model, aClass)/][/for]
 
-[for (aClass: Class | model.getConcreateClasses())][generateClassTest(model, aClass)/][/for]
+[comment][for (aClass: Class | model.getConcreateClasses())][generateClassTest(model, aClass)/][/for][/comment]
 
 [for (anInterface: Interface | model.getInterfaces())][generateInterface(anInterface)/][/for]
 [/template]
