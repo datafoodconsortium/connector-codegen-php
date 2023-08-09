@@ -35,6 +35,7 @@
 [query public getStereotypeSetter(e: Element): Stereotype = e.getStereotype(getStereotypeNameSetter()) /]
 
 [query public getStereotypeValueInitializerProperty(e: Element): Property = e.getValue(e.getStereotypeInitializer(), getStereotypePropertyNameInitializerProperty()) /]
+[query public getStereotypeValueInitializerParentProperty(e: Element): Property = e.getValue(e.getStereotypeInitializerParent(), getStereotypePropertyNameInitializerProperty()) /]
 [query public getStereotypeValuePropertyGetter(e: Element): Operation = e.getValue(e.getStereotypeProperty(), getStereotypePropertyNamePropertyGetter()) /]
 [query public getStereotypeValuePropertySetter(e: Element): Operation = e.getValue(e.getStereotypeProperty(), getStereotypePropertyNamePropertySetter()) /]
 [query public getStereotypeValuePropertyMultipleAdder(e: Element): Operation = e.getValue(e.getStereotypePropertyMultiple(), getStereotypePropertyNamePropertyMultipleAdder()) /]
@@ -57,7 +58,10 @@
 
 [query public getInterfaces(model: Model): Bag(Interface) = model.getClassifiers()->selectByType(Interface) /]
 
-[query public getImplementations(model: Model, i: Interface): Bag(Class) = model.getConcreateClasses()->select(c: Class | c.getAllImplementedInterfaces()->includes(i)) /]
+[query public getImplementations(i: Interface, model: Model): Bag(Class) = model.getConcreateClasses()->select(c: Class | c.getAllImplementedInterfaces()->includes(i)) /]
+[query public getImplementation(i: Interface, model: Model): Class = i.getImplementations(model)->asSequence()->at(1) /]
+[query public getImplementation(aType: Type, model: Model): Class = if (aType.oclIsTypeOf(Interface)) then aType.oclAsType(Interface).getImplementation(model) else if (aType.oclIsTypeOf(Class)) then aType.oclAsType(Class) else null endif endif /]
+[query public getImplementation(anElement: TypedElement, model: Model): Class = anElement.type.getImplementation(model) /]
 
 [query public hasGeneralization(classifier: Classifier): Boolean = not (classifier.generalization->isEmpty()) /]
 
@@ -128,6 +132,7 @@
 [query public isAdder(o: Operation): Boolean = o.hasStereotype(getStereotypeNameAdder()) /]
 [query public isBlankNode(e: Element): Boolean = e.hasStereotype(getStereotypeNameBlankNode()) /]
 [query public isBlankNode(parameter: Parameter): Boolean = if (parameter.type.oclIsTypeOf(Class)) then parameter.type.oclAsType(Class).isBlankNode() else parameter.type.oclAsType(Interface).isBlankNode() endif /]
+[query public isCollection(anElement: MultiplicityElement): Boolean = anElement.upper = -1 /]
 [query public isConstructor(o: Operation): Boolean = o.hasStereotype(getStereotypeNameConstructor()) /]
 [query public isExternal(e: Element): Boolean = e.hasStereotype(getStereotypeNameExternal())/]
 [query public isGetter(o: Operation): Boolean = o.hasStereotype(getStereotypeNameGetter()) /]
@@ -140,6 +145,7 @@
 [query public isSetter(o: Operation): Boolean = o.hasStereotype(getStereotypeNameSetter()) /]
 
 [query public isPrimitive(t: Type): Boolean = if (t.name = 'String' or t.name = 'Boolean' or t.name = 'Real' or t.name = 'Integer') then true else false endif /]
+[query public isPrimitive(anElement: TypedElement): Boolean = anElement.type.isPrimitive() /]
 
 [comment query public getAttributeForStereotypedOperation(c: Class, s: String, o: String): String 
 	= invoke('org.datafoodconsortium.connector.codegen.common.Common', 'getAttributeForStereotypedOperation(org.eclipse.uml2.uml.Class, java.lang.String, java.lang.String)', Sequence{c, s, o})
@@ -156,17 +162,24 @@
 [query public getProperty(anOperation: Operation, aClass: Class): Property = if (anOperation.isAdder()) then anOperation.getPropertyofAdder(aClass) else if (anOperation.isGetter()) then anOperation.getPropertyOfGetter(aClass) else if (anOperation.isRemover()) then anOperation.getPropertyOfRemover(aClass) else if (anOperation.isSetter()) then anOperation.getPropertyOfSetter(aClass) else null endif endif endif endif /]
 [query private getPropertyofAdder(anOperation: Operation, aClass: Class): Property = aClass.getProperties()->select(p: Property | p.isPropertyMultiple() and p.getAdder() = anOperation)->at(1) /]
 [query private getPropertyOfGetter(anOperation: Operation, aClass: Class): Property = aClass.getProperties()->select(p: Property | p.getGetter() = anOperation)->at(1) /]
-[query private getPropertyOfRemover(anOperation: Operation, aClass: Class): Property = aClass.getProperties()->select(p: Property | p.getRemover() = anOperation)->at(1) /]
+[query private getPropertyOfRemover(anOperation: Operation, aClass: Class): Property = aClass.getProperties()->select(p: Property | p.isPropertyMultiple() and p.getRemover() = anOperation)->at(1) /]
 [query private getPropertyOfSetter(anOperation: Operation, aClass: Class): Property = aClass.getProperties()->select(p: Property | p.getSetter() = anOperation)->at(1) /]
 
 [query public getAdder(p: Property): Operation = p.getStereotypeValuePropertyMultipleAdder() /]
 [query public getAdder(p: Parameter): Operation = p.getStereotypeValueInitializerProperty().getAdder() /]
 [query public getGetter(p: Property): Operation = if (p.isPropertyMultiple()) then p.getStereotypeValuePropertyMultipleGetter() else p.getStereotypeValuePropertyGetter() endif /]
-[query public getGetter(p: Parameter): Operation = p.getStereotypeValueInitializerProperty().getGetter() /]
+[query public getGetter(p: Parameter): Operation = if (p.isInitializer()) then p.getStereotypeValueInitializerProperty().getGetter() else if p.isInitializerParent() then p.getStereotypeValueInitializerParentProperty().getGetter() else null endif endif /]
 [query public getRemover(p: Property): Operation = p.getStereotypeValuePropertyMultipleAdder() /]
 [query public getRemover(p: Parameter): Operation = p.getStereotypeValueInitializerProperty().getRemover() /]
 [query public getSetter(p: Property): Operation = if (p.isPropertyMultiple()) then p.getStereotypeValuePropertyMultipleSetter() else p.getStereotypeValuePropertySetter() endif /]
 [query public getSetter(p: Parameter): Operation = p.getStereotypeValueInitializerProperty().getSetter() /]
+
+[comment We need an Element as input to generate a new value each time the query is called with the same parameters (cache)./]
+[query public generateString(anElement: Element, length: Integer): String = invoke('org.datafoodconsortium.connector.codegen.common.Common', 'generateString(java.lang.Integer)', Sequence{length})/]
+[query public generateReal(anElement: Element): String = invoke('org.datafoodconsortium.connector.codegen.common.Common', 'generateReal()', Sequence{})/]
+[query public generateInteger(anElement: Element): String = invoke('org.datafoodconsortium.connector.codegen.common.Common', 'generateInteger()', Sequence{})/]
+[query public generateBoolean(anElement: Element): String = invoke('org.datafoodconsortium.connector.codegen.common.Common', 'generateBoolean()', Sequence{})/]
+[query public generateValue(anElement: TypedElement): String = invoke('org.datafoodconsortium.connector.codegen.common.Common', 'generateValue(java.lang.String)', Sequence{anElement.type.name})/]
 
 [comment query public getUnimplementedOperations(c: Classifier): Sequence(Operation)
 	= invoke('org.datafoodconsortium.connector.codegen.common.Common', 'getUnimplementedOperations(org.eclipse.uml2.uml.Classifier)', Sequence{c})

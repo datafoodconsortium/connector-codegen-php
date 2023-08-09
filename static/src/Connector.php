@@ -3,6 +3,7 @@
 namespace DataFoodConsortium\Connector;
 
 use \VirtualAssembly\Semantizer\Semantizer;
+use \VirtualAssembly\Semantizer\SemanticObjectAnonymous;
 
 class Connector implements IConnector {
 
@@ -10,7 +11,7 @@ class Connector implements IConnector {
     private Array $context;
 
     public function __construct() {
-        $this->semantizer = new Semantizer();
+        $this->semantizer = new Semantizer(new ConnectorFactory($this));
         // HACK: dfc should be renamed in dfc-b to comply with the UML term.
         // EasyRdf does not allow to use hyphen in prefix but it should.
         // A work in progress is here: https://github.com/sweetrdf/easyrdf/issues/32.

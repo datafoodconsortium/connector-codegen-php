@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "99bd88ee515f40347ce5f43022fbf702",
+    "content-hash": "13768018721ee597c3d7c1a4720f10e5",
     "packages": [
         {
             "name": "ml/iri",
@@ -344,25 +344,22 @@
         },
         {
             "name": "virtual-assembly/semantizer",
-            "version": "1.0.0-alpha2",
+            "version": "v1.0.0-alpha3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/assemblee-virtuelle/semantizer-php.git",
-                "reference": "51717ef2cf7374081a00749444f10f2fabf08af6"
+                "reference": "dbf31ca6213f539abcf1fb8751d7bdeeafa28516"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/assemblee-virtuelle/semantizer-php/zipball/51717ef2cf7374081a00749444f10f2fabf08af6",
-                "reference": "51717ef2cf7374081a00749444f10f2fabf08af6",
+                "url": "https://api.github.com/repos/assemblee-virtuelle/semantizer-php/zipball/dbf31ca6213f539abcf1fb8751d7bdeeafa28516",
+                "reference": "dbf31ca6213f539abcf1fb8751d7bdeeafa28516",
                 "shasum": ""
             },
             "require": {
                 "ml/json-ld": "^1.2",
                 "php": ">=8.1",
                 "sweetrdf/easyrdf": "^1.9"
-            },
-            "require-dev": {
-                "phpunit/phpunit": "^10.2"
             },
             "type": "library",
             "autoload": {
@@ -389,9 +386,9 @@
             ],
             "support": {
                 "issues": "https://github.com/assemblee-virtuelle/semantizer-php/issues",
-                "source": "https://github.com/assemblee-virtuelle/semantizer-php/tree/v1.0.0-alpha.2"
+                "source": "https://github.com/assemblee-virtuelle/semantizer-php/tree/v1.0.0-alpha3"
             },
-            "time": "2023-07-31T13:04:00+00:00"
+            "time": "2023-08-09T10:12:32+00:00"
         },
         {
             "name": "zozlak/rdf-constants",
